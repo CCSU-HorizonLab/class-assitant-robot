@@ -13,6 +13,11 @@ elif voice_solution == "doubao":
     if chat_or_standard == True:
         from Doubao_solution import tts_stream
         from Doubao_solution.tts_stream import response_queue, tts_manager
+elif voice_solution == "local":
+    from local_tts import tts
+    if chat_or_standard == True:
+        from local_tts import tts_stream
+        from local_tts.tts_stream import response_queue, tts_manager
 # else:
 #     # 配置错误抛出明确异常，方便排查
-#     raise ValueError(f"语音方案配置错误！仅支持azure/doubao，当前配置：{VOICE_SOLUTION}")
+#     raise ValueError(f"语音方案配置错误！仅支持azure/doubao/local，当前配置：{VOICE_SOLUTION}")

@@ -1,0 +1,33 @@
+{
+  "schema_version": "teacher_questions_v1",
+  "capture_id": "fc27a276dd3f4279a05b22eb475f9211",
+  "classroom_id": "classroom-default",
+  "status": "available",
+  "source": {
+    "transcript_status": "completed",
+    "transcript_source": "vosk_stt",
+    "extractor": "rule_based_question_extractor_v1",
+    "generated_at": "2026-07-17T16:18:54+08:00"
+  },
+  "questions": [
+    {
+      "question_id": "q_001",
+      "start_sec": 0.0,
+      "end_sec": 15.552,
+      "display_time": "00:00-00:16",
+      "text": "呢",
+      "question_type": "unknown",
+      "confidence": 0.6,
+      "source": "rule_from_transcript",
+      "stage_hint": "unknown"
+    }
+  ],
+  "summary": {
+    "question_count": 1,
+    "open_question_count": 0,
+    "closed_question_count": 0,
+    "check_question_count": 0,
+    "has_questions": true
+  },
+  "warnings": []
+}

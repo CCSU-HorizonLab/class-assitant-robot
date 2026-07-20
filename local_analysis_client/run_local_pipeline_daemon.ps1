@@ -1,6 +1,6 @@
 param(
-    [string]$DeliveryRoot = "captures_local_delivery",
-    [string]$ConfigPath = "config.yaml",
+    [string]$DeliveryRoot = "D:\Codes\Python\Assitant\class-assitant-robot\captures_local_delivery",
+    [string]$ConfigPath = "D:\Codes\Python\Assitant\class-assitant-robot\config.yaml",
     [string]$PendingUploadDir = "processed_results\pending_upload",
     [string]$ManifestPath = "processed_results\session_consume_manifest.json",
     [string]$CloudHost = "8.148.205.228",

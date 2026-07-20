@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>智能课堂行为分析与教学反馈平台</title>
+  {{ PHASE31_STYLE | safe }}
+  <style>
+    body { min-height: 100vh; display: grid; place-items: center; padding: 26px 0; }
+    .login-shell { width: min(1180px, calc(100% - 40px)); display: grid; grid-template-columns: minmax(420px, .92fr) minmax(520px, 1.08fr); gap: 24px; align-items: stretch; }
+    .login-panel { background: rgba(255,255,255,.98); border: 1px solid var(--color-border); border-radius: 24px; padding: 34px; box-shadow: var(--shadow); }
+    .login-panel h1 { font-size: clamp(34px, 4.6vw, 52px); line-height: 1.08; margin: 12px 0; }
+    .login-panel input { width: 100%; }
+    .login-panel button { width: 100%; margin-top: 12px; }
+    .login-demo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .login-product-card { min-height: 640px; align-content: center; }
+    .login-visual-panel {
+      min-height: 640px;
+      background:
+        linear-gradient(135deg, rgba(15,42,61,.20), rgba(37,99,235,.32)),
+        radial-gradient(circle at 18% 20%, rgba(20,184,166,.34), transparent 28%),
+        radial-gradient(circle at 76% 18%, rgba(37,99,235,.26), transparent 30%),
+        url('/static/login-education-visual.png'),
+        linear-gradient(135deg, #0F2A3D 0%, #174F59 45%, #2563EB 100%);
+      background-size: cover, auto, auto, cover, cover;
+      background-position: center;
+    }
+    .login-visual-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.7), transparent 82%);
+    }
+    .visual-title-on-image {
+      position: absolute;
+      z-index: 2;
+      left: 36px;
+      top: 42px;
+      max-width: 500px;
+      color: #F8FAFC;
+      text-shadow: 0 2px 14px rgba(0,0,0,.28);
+    }
+    .visual-title-on-image .kicker { color: #BFF7E3; }
+    .visual-title-on-image h2 { color: #FFFFFF; font-size: 34px; line-height: 1.18; margin: 12px 0; }
+    .visual-title-on-image p { color: rgba(248,250,252,.9); font-size: 15px; line-height: 1.75; }
+    @media (max-width: 920px) { .login-shell { grid-template-columns: 1fr; } .login-demo-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="login-shell" data-marker="phase29-login-page">
+    <section class="login-panel login-product-card">
+      <p class="kicker">智能课堂云端平台</p>
+      <h1>欢迎登录</h1>
+      <p class="muted">教师端 / 管理员端统一入口</p>
+      <p class="error" id="error"></p>
+      <form id="login-form">
+        <label for="username">用户名</label>
+        <input id="username" name="username" autocomplete="username" required />
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit">登录</button>
+      </form>
+      <div class="login-demo-row">
+        <button class="secondary" data-demo-user="teacher" data-demo-password="teacher123">教师演示登录</button>
+        <button class="secondary" data-demo-user="admin" data-demo-password="admin123">管理员演示登录</button>
+      </div>
+      <p class="muted" style="margin-top:18px">还没有账号？<a href="/register">注册教师账号</a></p>
+    </section>
+    <section class="login-visual-panel" aria-label="教育数据平台视觉区">
+      <div class="visual-title-on-image">
+        <p class="kicker">Teaching Analytics AIoT Platform</p>
+        <h2>智能课堂行为分析与教学反馈平台</h2>
+        <p>树莓派端采集、本地 GPU 节点分析与云端仪表盘反馈形成可解释的多模态数据闭环。</p>
+        <div class="pipeline" style="margin-top:24px;background:rgba(15,23,42,.65);padding:14px 18px;border-radius:16px;backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);">
+          <div style="font-size:12px;font-weight:700;color:#93C5FD;margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase;">三端闭环架构</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:#F8FAFC;">
+            <span style="background:rgba(59,130,246,.3);border:1px solid rgba(147,197,253,.3);padding:4px 10px;border-radius:999px;">🤖 树莓派采集交互</span>
+            <span style="color:#94A3B8;">→</span>
+            <span style="background:rgba(16,185,129,.3);border:1px solid rgba(110,231,183,.3);padding:4px 10px;border-radius:999px;">⚡ 本地 YOLO+ASR 推理</span>
+            <span style="color:#94A3B8;">→</span>
+            <span style="background:rgba(139,92,246,.3);border:1px solid rgba(196,181,253,.3);padding:4px 10px;border-radius:999px;">📊 云端教师反馈</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    async function login(username, password) {
+      document.getElementById("error").textContent = "";
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username, password})
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success !== true) {
+        throw new Error(payload.message || payload.detail || "登录失败，请检查账号或密码。");
+      }
+      window.location.href = payload.redirect_to || "/";
+    }
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        const form = new FormData(event.target);
+        await login(form.get("username"), form.get("password"));
+      } catch (error) {
+        document.getElementById("error").textContent = String(error.message || error);
+      }
+    });
+    document.querySelectorAll("[data-demo-user]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          await login(button.dataset.demoUser, button.dataset.demoPassword);
+        } catch (error) {
+          document.getElementById("error").textContent = String(error.message || error);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

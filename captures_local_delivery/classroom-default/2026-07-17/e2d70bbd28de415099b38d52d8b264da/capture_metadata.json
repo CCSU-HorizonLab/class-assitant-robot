@@ -1,0 +1,21 @@
+{
+  "capture": {
+    "device_id": "raspberrypi",
+    "device_name": "Raspberry Pi - raspberrypi",
+    "classroom_id": "classroom-default",
+    "captured_at": "2026-07-17T16:34:54+08:00",
+    "video_path": "/home/zwgk/Pi-Assitant-master/PI-Assistant-master (1)/PI-Assistant-master/captures/classroom-default/2026-07-17/e2d70bbd28de415099b38d52d8b264da/video.mp4",
+    "standardized_video_path": "/home/zwgk/Pi-Assitant-master/PI-Assistant-master (1)/PI-Assistant-master/captures/classroom-default/2026-07-17/e2d70bbd28de415099b38d52d8b264da/standardized_video.mp4",
+    "keyframe_dir": "/home/zwgk/Pi-Assitant-master/PI-Assistant-master (1)/PI-Assistant-master/captures/classroom-default/2026-07-17/e2d70bbd28de415099b38d52d8b264da/keyframes"
+  },
+  "video": {
+    "raw_video_path": "/home/zwgk/Pi-Assitant-master/PI-Assistant-master (1)/PI-Assistant-master/captures/classroom-default/2026-07-17/e2d70bbd28de415099b38d52d8b264da/video.mp4",
+    "standardized_video_path": "/home/zwgk/Pi-Assitant-master/PI-Assistant-master (1)/PI-Assistant-master/captures/classroom-default/2026-07-17/e2d70bbd28de415099b38d52d8b264da/standardized_video.mp4",
+    "format": "mp4",
+    "codec": "h264",
+    "audio_codec": "aac",
+    "browser_compatible": true,
+    "transcode_status": "success",
+    "transcode_error": ""
+  }
+}

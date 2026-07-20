@@ -127,3 +127,5 @@ local_analysis_client/*.7z
 local_analysis_client/**/*.7z
 local_analysis_client/*.rar
 local_analysis_client/**/*.rar
+项目工程说明书.md
+项目接手与快速入门指南.md

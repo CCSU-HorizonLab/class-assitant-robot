@@ -74,6 +74,57 @@ def analyze_delivery_package(
     video_path: Path | None = delivery["video_path"]
     audio_path: Path | None = delivery["audio_path"]
 
+    standardized_video_path = None
+    if video_path is not None:
+        video_format = video_path.suffix.lower().lstrip(".")
+        codec = _detect_video_codec(video_path)
+        is_compatible = (video_format == "mp4" and codec.lower() in {"h264", "avc1"})
+        
+        if is_compatible:
+            LOGGER.info("Video %s is already browser compatible (codec: %s).", video_path.name, codec)
+        else:
+            # Check if standardized_video.mp4 already exists and is compatible
+            expected_transcoded_path = video_path.parent / "standardized_video.mp4"
+            if expected_transcoded_path.exists():
+                transcoded_codec = _detect_video_codec(expected_transcoded_path)
+                if transcoded_codec.lower() in {"h264", "avc1"}:
+                    LOGGER.info("Standardized video already exists and is browser compatible: %s", expected_transcoded_path.name)
+                    standardized_video_path = expected_transcoded_path
+                    metadata["standardized_video_path"] = str(standardized_video_path)
+            
+            if standardized_video_path is None:
+                LOGGER.info("Video %s (codec: %s) is not browser compatible. Starting automatic transcoding...", video_path.name, codec)
+                try:
+                    if not shutil.which("ffmpeg"):
+                        raise RuntimeError("ffmpeg command not found in PATH. Cannot transcode video.")
+                    
+                    import subprocess
+                    cmd = [
+                        "ffmpeg", "-y",
+                        "-i", str(video_path),
+                        "-map", "0:v:0",
+                        "-map", "0:a?",
+                        "-c:v", "libx264",
+                        "-preset", "veryfast",
+                        "-crf", "23",
+                        "-pix_fmt", "yuv420p",
+                        "-c:a", "aac",
+                        "-b:a", "128k",
+                        "-movflags", "+faststart",
+                        str(expected_transcoded_path)
+                    ]
+                    LOGGER.info("Running ffmpeg command: %s", " ".join(cmd))
+                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+                    if res.returncode != 0 or not expected_transcoded_path.exists():
+                        stderr_msg = res.stderr or res.stdout or "ffmpeg failed"
+                        raise RuntimeError(f"FFmpeg transcoding failed with code {res.returncode}: {stderr_msg}")
+                    
+                    LOGGER.info("Transcoding successful. Standardized video saved to: %s", expected_transcoded_path)
+                    standardized_video_path = expected_transcoded_path
+                    metadata["standardized_video_path"] = str(standardized_video_path)
+                except Exception as exc:
+                    LOGGER.error("Failed to transcode video: %s", exc)
+
     processor = build_default_processor(config_path or resolve_config_path())
     cloud_upload_enabled = bool(processor.config.cloud_push_enabled)
     processor.config.cloud_push_enabled = False
@@ -258,6 +309,11 @@ def analyze_delivery_package(
         result["teacher"]["question_summary"] = teacher_cfg["question_summary"]
     result["video"] = video_metadata
     result["upload"] = upload_metadata
+
+    # Copy extra metadata fields if present to ensure backend visibility and correct naming
+    for key in ("lesson_title", "source_dataset", "classroom_name"):
+        if isinstance(metadata, dict) and key in metadata:
+            result[key] = metadata[key]
 
     validation = validate_result_payload(result)
     if not validation["is_valid"]:
@@ -471,8 +527,18 @@ def _build_video_metadata(
     raw_video_path = str(video_path) if video_path is not None else str(
         metadata.get("video_path") or capture_block.get("video_path") or standardized_video_path or ""
     )
-    video_format = (video_path.suffix.lower().lstrip(".") if video_path is not None else "").lower()
-    codec = _detect_video_codec(video_path)
+    
+    # Assess compatibility against the standardized video if it exists
+    effective_video_path = video_path
+    if standardized_video_path and Path(standardized_video_path).exists():
+        effective_video_path = Path(standardized_video_path)
+    elif video_path is not None:
+        local_std = video_path.parent / "standardized_video.mp4"
+        if local_std.exists() and local_std.is_file():
+            effective_video_path = local_std
+        
+    video_format = (effective_video_path.suffix.lower().lstrip(".") if effective_video_path is not None else "").lower()
+    codec = _detect_video_codec(effective_video_path)
     browser_compatible_value = capture_video_block.get("browser_compatible", metadata.get("browser_compatible"))
     if browser_compatible_value is None:
         browser_compatible = bool(video_format == "mp4" and codec.lower() in {"h264", "avc1"})
@@ -546,21 +612,28 @@ def _prepare_upload_payload(result_data: dict[str, Any], cloud_push_url: str) ->
 
 
 def _resolve_upload_video_path(result_data: dict[str, Any]) -> Path | None:
-    candidate_values: list[Any] = []
+    # If a local standardized video exists in the same directory as raw_video_path, prioritize it!
     video_block = result_data.get("video")
+    if isinstance(video_block, dict) and video_block.get("raw_video_path"):
+        raw_path = Path(video_block["raw_video_path"])
+        local_std = raw_path.parent / "standardized_video.mp4"
+        if local_std.exists() and local_std.is_file():
+            return local_std
+
+    candidate_values: list[Any] = []
     if isinstance(video_block, dict):
         candidate_values.extend(
             [
-                video_block.get("raw_video_path"),
                 video_block.get("standardized_video_path"),
+                video_block.get("raw_video_path"),
             ]
         )
     capture_block = result_data.get("capture")
     if isinstance(capture_block, dict):
         candidate_values.extend(
             [
-                capture_block.get("video_path"),
                 capture_block.get("standardized_video_path"),
+                capture_block.get("video_path"),
             ]
         )
     for value in candidate_values:

@@ -64,6 +64,20 @@ if (-not (Test-Path $EnrichModel) -and $EnrichModel -eq "C:\Users\lyy\Desktop\gr
 Write-Host "enrich_model=$EnrichModel"
 
 Push-Location $repoRoot
+$PythonCmd = "python"
+$VenvPython = Join-Path $repoRoot "venv\Scripts\python.exe"
+$ParentVenvPython = Join-Path (Split-Path -Parent $repoRoot) "venv\Scripts\python.exe"
+
+if (Test-Path $VenvPython) {
+    $PythonCmd = $VenvPython
+    Write-Host "Using virtual environment Python: $PythonCmd" -ForegroundColor Cyan
+} elseif (Test-Path $ParentVenvPython) {
+    $PythonCmd = $ParentVenvPython
+    Write-Host "Using parent virtual environment Python: $PythonCmd" -ForegroundColor Cyan
+} else {
+    Write-Host "Virtual environment python not found, falling back to system python" -ForegroundColor Yellow
+}
+
 try {
     if ($Mode -eq "retry") {
         $args = @("local-processor/scripts/retry_pending_uploads.py")
@@ -76,7 +90,7 @@ try {
         if ($Limit -gt 0) {
             $args += @("--limit", "$Limit")
         }
-        & python @args
+        & $PythonCmd @args
         exit $LASTEXITCODE
     }
 
@@ -117,7 +131,7 @@ try {
         if ($Limit -gt 0) {
             $args += @("--limit", "$Limit")
         }
-        & python @args
+        & $PythonCmd @args
         exit $LASTEXITCODE
     }
 
@@ -147,7 +161,7 @@ try {
     if ($EnrichForceQuestions) {
         $args += @("--force-questions")
     }
-    & python @args
+    & $PythonCmd @args
     exit $LASTEXITCODE
 }
 finally {

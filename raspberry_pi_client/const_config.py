@@ -3,7 +3,7 @@ use_doubao=False
 doubao_api_key = '' #获取方法参考https://www.volcengine.com/docs/82379/1399008?lang=zh
 
 use_deepseek=True
-sfapikey=''
+sfapikey='your_siliconflow_api_key_here'
 
 use_openai=False #True则使用openai
 openapikey='' #gpt-key
@@ -20,8 +20,8 @@ chat_or_standard=True #采用聊天模式还是标准模式（家庭助手），
 
 ########语音服务(TTS and STT)##########
 use_online_recognize=True #是否采用线上语音识别（效果好，针对优化）
-voice_solution= 'azure'  # 豆包就改成"doubao"
-azure_key=''   #使用线上语音识别需填写 Azrue key
+voice_solution= 'azure'  # azure / doubao / local
+azure_key='your_azure_key_here'   #使用线上语音识别需填写 Azrue key（请在 Pi 上填写实际 key）
 
 #voice_solution= "doubao"
 doubao_appid = '' # tts设置，参考https://www.volcengine.com/docs/6561/1257584?lang=zh

@@ -1,0 +1,21 @@
+{
+  "schema_version": "v1",
+  "updated_at": "2026-07-09T12:58:16Z",
+  "sessions": {
+    "d:\\codes\\python\\assitant\\class-assitant-robot\\captures_local_delivery\\classroom_test\\2026-07-09\\session-001": {
+      "analysis_id": "cls_20260709_classroom_test_session_001",
+      "package_dir": "D:\\Codes\\Python\\Assitant\\class-assitant-robot\\captures_local_delivery\\classroom_test\\2026-07-09\\session-001",
+      "analysis_status": "success",
+      "last_attempt_at": "2026-07-09T12:58:15Z",
+      "output_path": "D:\\Codes\\Python\\Assitant\\class-assitant-robot\\processed_results\\classroom_feedback\\cls_20260709_classroom_test_session_001.json",
+      "upload_mode": "http",
+      "upload_status": "success",
+      "http_status": 200,
+      "delivery_target": "http://127.0.0.1:8010/api/interaction-results",
+      "transcript_action": null,
+      "question_action": null,
+      "transcript_segment_count": null,
+      "question_event_count": null
+    }
+  }
+}
