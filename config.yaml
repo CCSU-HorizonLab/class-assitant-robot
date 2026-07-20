@@ -5,7 +5,7 @@ paths:
 
 models:
   use_merged_model: true
-  merged_model_path: "yolov8n.pt"
+  merged_model_path: "local_analysis_client/yolov8n.pt"
   hand_class_names:
     - "person"
   standing_class_names:
