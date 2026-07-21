@@ -1020,7 +1020,7 @@ class PostgreSQLResultRepository:
                     LEFT JOIN teacher_classrooms tc ON tc.classroom_id = ar.classroom_id
                     LEFT JOIN users u ON u.user_id = tc.user_id
                     {where_clause}
-                    ORDER BY COALESCE(ar.created_at, ar.generated_at, s.generated_at) DESC NULLS LAST
+                    ORDER BY COALESCE(s.recorded_at, ar.created_at, ar.generated_at, s.generated_at) DESC NULLS LAST
                     LIMIT %s OFFSET %s
                     """,
                     tuple(params),
@@ -1088,7 +1088,7 @@ class PostgreSQLResultRepository:
                     LEFT JOIN teacher_classrooms tc ON tc.classroom_id = ar.classroom_id
                     LEFT JOIN users u ON u.user_id = tc.user_id
                     {where_clause}
-                    ORDER BY COALESCE(ar.created_at, ar.generated_at, s.generated_at) DESC NULLS LAST
+                    ORDER BY COALESCE(s.recorded_at, ar.created_at, ar.generated_at, s.generated_at) DESC NULLS LAST
                     LIMIT %s
                     """,
                     tuple(params),
@@ -1179,7 +1179,7 @@ class PostgreSQLResultRepository:
                     LEFT JOIN sessions s ON s.analysis_id = ar.analysis_id
                     LEFT JOIN classrooms c ON c.classroom_id = ar.classroom_id
                     {where_clause}
-                    ORDER BY COALESCE(ar.created_at, ar.generated_at, s.generated_at) DESC NULLS LAST
+                    ORDER BY COALESCE(s.recorded_at, ar.created_at, ar.generated_at, s.generated_at) DESC NULLS LAST
                     LIMIT %s OFFSET %s
                     """,
                     tuple(params),

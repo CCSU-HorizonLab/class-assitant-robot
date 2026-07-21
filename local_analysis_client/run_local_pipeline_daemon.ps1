@@ -3,7 +3,7 @@ param(
     [string]$ConfigPath = "D:\Codes\Python\Assitant\class-assitant-robot\config.yaml",
     [string]$PendingUploadDir = "processed_results\pending_upload",
     [string]$ManifestPath = "processed_results\session_consume_manifest.json",
-    [string]$CloudHost = "8.148.205.228",
+    [string]$CloudHost = "8.148.13.80",
     [int]$PollSeconds = 15,
     [int]$ConsumeLimit = 0,
     [int]$RetryLimit = 0,

@@ -126,7 +126,11 @@ def build_results_center_html(
       <h1>单堂课堂证据与教学反馈仪表盘</h1>
       <p class="muted">把课堂视频证据、课堂活动、关键事件和教学建议整合到同一页，帮助教师完成有依据的复盘。</p>
       <div class="pipeline" data-marker="data-pipeline-status">
-        <span>采集端或外部样本</span><span>-></span><span>本地分析</span><span>-></span><span>云端反馈</span>
+        <span class="pipeline-node"><i class="pipeline-dot"></i>📷 树莓派采集 / 外部样本</span>
+        <span class="pipeline-arrow">➔</span>
+        <span class="pipeline-node"><i class="pipeline-dot"></i>🧠 本地 YOLO 分析</span>
+        <span class="pipeline-arrow">➔</span>
+        <span class="pipeline-node"><i class="pipeline-dot"></i>☁️ 云端 FastAPI 反馈</span>
       </div>
       {hero_metric_rows}
       <p><strong>课堂结论：</strong> {html.escape(_stringify(latest.get("summary_text")))}</p>

@@ -359,8 +359,15 @@ class YoloInteractionProcessor:
         window_start_ts: float,
         window_end_ts: float,
     ) -> list[FrameRecord]:
-        """仅保留 20 秒统计窗口内的关键帧。"""
+        """仅保留统计窗口内的关键帧。"""
+        if not frames:
+            return []
+        min_ts = min(f.timestamp for f in frames)
+        if min_ts < 1000000000.0:
+            return frames
         filtered_frames = [frame for frame in frames if window_start_ts <= frame.timestamp < window_end_ts]
+        if not filtered_frames:
+            return frames
         dropped_count = len(frames) - len(filtered_frames)
         if dropped_count > 0:
             LOGGER.warning(

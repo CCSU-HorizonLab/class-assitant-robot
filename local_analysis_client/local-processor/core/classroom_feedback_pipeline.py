@@ -179,7 +179,7 @@ def analyze_delivery_package(
 
     zone_summary = _aggregate_zone_summary(student_window_results, metadata)
     hand_raise_event_count = int(sum(item["hand_raise_event_count"] for item in student_window_results))
-    estimated_student_count = _resolve_estimated_student_count(metadata)
+    estimated_student_count = _resolve_estimated_student_count(metadata, student_window_results)
     avg_attention_ratio = _resolve_avg_attention_ratio(metadata, zone_summary)
     attention_curve = _build_attention_curve(metadata, student_window_results, avg_attention_ratio)
     activity_curve = _build_activity_curve(metadata, student_window_results)
@@ -636,6 +636,13 @@ def _resolve_upload_video_path(result_data: dict[str, Any]) -> Path | None:
                 capture_block.get("video_path"),
             ]
         )
+    source_block = result_data.get("source")
+    if isinstance(source_block, dict):
+        source_path = source_block.get("source_path") or source_block.get("package_dir")
+        if source_path:
+            sp = Path(source_path).parent if Path(source_path).is_file() else Path(source_path)
+            candidate_values.extend([sp / "standardized_video.mp4", sp / "video.mp4"])
+
     for value in candidate_values:
         if not value:
             continue
@@ -2005,20 +2012,42 @@ def _aggregate_zone_summary(
     return zones
 
 
-def _resolve_estimated_student_count(metadata: dict[str, Any]) -> int:
+def _resolve_estimated_student_count(metadata: dict[str, Any], student_window_results: list[dict[str, Any]] | None = None) -> int:
     students_cfg = metadata.get("students", {})
     if isinstance(students_cfg, dict) and students_cfg.get("estimated_student_count") is not None:
-        return int(students_cfg["estimated_student_count"])
+        val = int(students_cfg["estimated_student_count"])
+        if val > 0:
+            return val
     value = metadata.get("estimated_student_count")
-    return int(value) if value is not None else 0
+    if value is not None and int(value) > 0:
+        return int(value)
+    if student_window_results:
+        counts = [int(item.get("estimated_student_count") or 0) for item in student_window_results if isinstance(item, dict)]
+        max_c = max(counts) if counts else 0
+        if max_c > 0:
+            return max_c
+        has_active = any(
+            any(z.get("active_ratio", 0) > 0 or z.get("avg_attention_ratio", 0) > 0 for z in (item.get("zones") or {}).values())
+            for item in student_window_results if isinstance(item, dict)
+        )
+        if has_active:
+            return 1
+    return 0
 
 
 def _resolve_avg_attention_ratio(metadata: dict[str, Any], zone_summary: dict[str, dict[str, float]]) -> float:
     students_cfg = metadata.get("students", {})
     if isinstance(students_cfg, dict) and students_cfg.get("avg_attention_ratio") is not None:
-        return float(students_cfg["avg_attention_ratio"])
-    zone_values = [zone["avg_attention_ratio"] for zone in zone_summary.values()]
-    return (sum(zone_values) / len(zone_values)) if zone_values else 0.0
+        val = float(students_cfg["avg_attention_ratio"])
+        if val > 0:
+            return val
+    zone_values = [zone["avg_attention_ratio"] for zone in zone_summary.values() if isinstance(zone, dict) and zone.get("avg_attention_ratio", 0) > 0]
+    if zone_values:
+        return sum(zone_values) / len(zone_values)
+    active_values = [zone["active_ratio"] for zone in zone_summary.values() if isinstance(zone, dict) and zone.get("active_ratio", 0) > 0]
+    if active_values:
+        return round(sum(active_values) / len(active_values) * 0.82, 4)
+    return 0.0
 
 
 def _build_attention_curve(

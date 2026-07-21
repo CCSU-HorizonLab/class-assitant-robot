@@ -23,5 +23,5 @@ server:
 
 cloud:
   push_enabled: true
-  push_url: "http://127.0.0.1:8011/api/interaction-results/with-video"
+  push_url: "http://8.148.13.80:8011/api/interaction-results/with-video"
   push_timeout: 30

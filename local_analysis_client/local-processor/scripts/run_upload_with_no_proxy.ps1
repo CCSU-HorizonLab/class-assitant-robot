@@ -3,7 +3,7 @@ param(
     [ValidateSet("analyze", "retry", "consume")]
     [string]$Mode,
 
-    [string]$CloudHost = "8.148.205.228",
+    [string]$CloudHost = "8.148.13.80",
 
     [string]$PackageDir = "captures_local_delivery/classroom_101/session_001",
 

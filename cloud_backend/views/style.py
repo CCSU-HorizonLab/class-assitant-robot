@@ -259,8 +259,12 @@ PHASE31_STYLE = """
     .action-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     td .button, td button, td .action-button { margin: 2px 4px 2px 0; }
     
-    .pipeline { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
-    .pipeline span { background: var(--color-primary-soft); color: var(--color-primary-strong); border-radius: var(--radius-chip); padding: 6px 14px; font-weight: 700; font-size: 13px; }
+    .pipeline { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; background: rgba(255, 255, 255, 0.65); padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(59, 130, 246, 0.18); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .pipeline span, .pipeline-node { display: inline-flex; align-items: center; gap: 6px; background: #ffffff; color: var(--color-primary-strong); border-radius: 999px; padding: 5px 13px; font-weight: 700; font-size: 12px; border: 1px solid rgba(226, 232, 240, 0.9); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03); transition: all 0.2s ease; }
+    .pipeline span:hover, .pipeline-node:hover { transform: translateY(-1px); border-color: var(--brand); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12); }
+    .pipeline-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-secondary); box-shadow: 0 0 8px var(--color-secondary); animation: pulseDot 2s infinite; }
+    .pipeline-arrow { color: var(--color-primary); font-size: 13px; font-weight: 800; opacity: 0.8; margin: 0 2px; }
+    @keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.5; } }
     
     .chart, .chart-box { height: 340px; min-height: 320px; width: 100%; min-width: 0; }
     .chart-hero { height: 400px; min-height: 380px; }

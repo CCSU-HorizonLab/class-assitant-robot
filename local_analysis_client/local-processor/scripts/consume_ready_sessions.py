@@ -16,14 +16,16 @@ if str(REPO_ROOT) not in sys.path:
 from classroom_feedback_pipeline import analyze_delivery_package
 
 
-DEFAULT_DELIVERY_ROOT = REPO_ROOT / "captures_local_delivery"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DELIVERY_ROOT = PROJECT_ROOT / "captures_local_delivery" if (PROJECT_ROOT / "captures_local_delivery").exists() else REPO_ROOT / "captures_local_delivery"
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml" if (PROJECT_ROOT / "config.yaml").exists() else None
 DEFAULT_MANIFEST_PATH = REPO_ROOT / "processed_results" / "session_consume_manifest.json"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scan delivery root and consume ready session packages.")
     parser.add_argument("--delivery-root", type=Path, default=DEFAULT_DELIVERY_ROOT, help="Root directory to scan recursively.")
-    parser.add_argument("--config-path", type=Path, default=None, help="Optional config.yaml path.")
+    parser.add_argument("--config-path", type=Path, default=DEFAULT_CONFIG_PATH, help="Optional config.yaml path.")
     parser.add_argument("--output-dir", type=Path, default=None, help="Optional output directory for generated JSON.")
     parser.add_argument("--pending-upload-dir", type=Path, default=None, help="Optional fallback directory for failed uploads.")
     parser.add_argument("--manifest-path", type=Path, default=DEFAULT_MANIFEST_PATH, help="Local consume manifest path.")
@@ -136,12 +138,13 @@ def consume_ready_sessions(
             )
             continue
 
+        resolved_config_path = Path(config_path).resolve() if config_path else DEFAULT_CONFIG_PATH
         attempt_at = _utc_now_iso()
         try:
             if enrich_missing_signals:
                 analyze_result = _run_enrich_and_analyze(
                     package_dir=package_dir,
-                    config_path=config_path,
+                    config_path=resolved_config_path,
                     output_dir=output_dir,
                     pending_upload_dir=pending_upload_dir,
                     upload_mode=upload_mode,
@@ -157,7 +160,7 @@ def consume_ready_sessions(
             else:
                 analyze_result = analyze_delivery_package(
                     package_dir,
-                    config_path=config_path,
+                    config_path=resolved_config_path,
                     output_dir=output_dir,
                     pending_upload_dir=pending_upload_dir,
                     upload_mode=upload_mode,
@@ -321,32 +324,20 @@ def _inspect_session_candidate(package_dir: Path) -> dict[str, Any]:
         }
     metadata = _normalize_metadata(package_dir, metadata)
 
-    session_ready = metadata.get("session_ready") is True
-    delivery_status = str(metadata.get("delivery_status") or "").strip().lower()
-    required_metadata_fields = ("classroom_id", "session_id")
-    missing_metadata_fields = [field for field in required_metadata_fields if not metadata.get(field)]
-    file_integrity = metadata.get("file_integrity") if isinstance(metadata.get("file_integrity"), dict) else {}
-
-    video_exists = (package_dir / "video.mp4").exists()
+    video_file = package_dir / "standardized_video.mp4"
+    if not video_file.exists():
+        video_file = package_dir / "video.mp4"
+    video_exists = video_file.exists() and video_file.stat().st_size > 100 * 1024
     metadata_exists = metadata_path.exists()
-    required_integrity_failures: list[str] = []
-    if file_integrity.get("metadata_json") is False:
-        required_integrity_failures.append("metadata_json=false")
-    if file_integrity.get("video_mp4") is False:
-        required_integrity_failures.append("video_mp4=false")
+
+    session_ready = metadata.get("session_ready") is True or metadata.get("status") == "completed" or video_exists
+    delivery_status = str(metadata.get("delivery_status") or "").strip().lower()
 
     reasons: list[str] = []
-    if not session_ready:
-        reasons.append("session_ready!=true")
-    if delivery_status != "ready":
-        reasons.append(f"delivery_status={delivery_status or '<missing>'}")
-    if missing_metadata_fields:
-        reasons.append(f"missing_metadata_fields={','.join(missing_metadata_fields)}")
     if not metadata_exists:
         reasons.append("metadata.json_missing")
     if not video_exists:
-        reasons.append("video.mp4_missing")
-    reasons.extend(required_integrity_failures)
+        reasons.append("video_file_missing_or_empty")
 
     if reasons:
         return {

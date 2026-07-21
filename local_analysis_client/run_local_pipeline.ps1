@@ -4,7 +4,7 @@ param(
     [string]$PendingUploadDir = "",
     [string]$ManifestPath = "",
     [int]$Limit = 0,
-    [string]$CloudHost = "8.148.205.228"
+    [string]$CloudHost = "8.148.13.80"
 )
 
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
