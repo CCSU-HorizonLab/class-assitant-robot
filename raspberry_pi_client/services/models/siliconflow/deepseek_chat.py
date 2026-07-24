@@ -19,7 +19,7 @@ def init_system():
     """
     初始化系统对话，添加系统提示（可根据需要进行调整）。
     """
-    from prompt_and_deal import get_system_prompt
+    from services.prompt_deal import get_system_prompt
     global messages
     messages = []
     system_message = get_system_prompt()
@@ -35,7 +35,7 @@ def chat_request():
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "deepseek-ai/DeepSeek-V4-Flash",
+        "model": "deepseek-ai/DeepSeek-V3",
         "messages": messages,
         "stream": False,
         "max_tokens": 512,

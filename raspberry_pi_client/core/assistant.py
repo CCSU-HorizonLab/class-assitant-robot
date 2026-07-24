@@ -1,57 +1,54 @@
-import sys
 import os
+import sys
+import time
+import subprocess
+from threading import Thread
+from loguru import logger
 
-# Add parent directory to sys.path so services and hardware modules can be imported
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from const_config import snowboy_enable,gpio_wake_enable,use_online_recognize,\
-    music_enable,schedule_enable,use_openai,dev_enable,wlan_enable,\
-    chat_or_standard,porcupine_enable
+from config import config
+from const_config import *
 
 if snowboy_enable:
-    snowboypath = os.path.join(os.path.dirname(__file__), "..", "services", "wake_words", "snowboy")
-    sys.path.append(snowboypath)
-    from services.wake_words.snowboy import hotwordBymic
+    snowboypath = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "services", "wake_words", "snowboy"))
+    if snowboypath not in sys.path:
+        sys.path.insert(0, snowboypath)
+    try:
+        import hotwordBymic
+    except Exception as e:
+        logger.warning(f"Could not import hotwordBymic: {e}")
 
 if use_online_recognize:
     from services.voice_solution import reco
 
+from hardware.recorder import record
+from hardware.player import play
+
+class _ExitHelper:
+    @staticmethod
+    def ifend(text: str) -> bool:
+        if not text:
+            return False
+        return any(kw in text for kw in ["结束对话", "终止对话", "不用说了", "闭嘴", "取消"])
+
+    @staticmethod
+    def ifexit(text: str) -> bool:
+        if not text:
+            return False
+        return any(kw in text for kw in ["退出程序", "关闭系统", "彻底退出"])
+
+class _TimeHelper:
+    @staticmethod
+    def timedetect(text: str) -> bool:
+        if not text:
+            return False
+        return any(kw in text for kw in ["几点了", "几点", "现在时间", "什么时间"])
+
+if_exit = _ExitHelper()
+if_time = _TimeHelper()
+
 from services.voice_solution import tts, tts_stream
 from services import prompt_deal as prompt_and_deal
-from hardware import recorder as speechpoint
-from hardware import player as play
-    from if_config import if_devControl
-
-if wlan_enable:
-    import mqtt_wlan
-
-import speechpoint
-
-from voice_solution import tts
-
-import prompt_and_deal
-
-if chat_or_standard:
-    from voice_solution import tts_stream
-
-import os
-import subprocess
-
-import arcade
-
-from threading import Thread
-
-import time
-
-from config import config
-
-from if_config import if_exit
-
-from if_config import if_time
-
-from play import play
-
-from loguru import logger
+import hardware.recorder as speechpoint
 
 chatsound = None
 chatplayer = None
@@ -110,8 +107,7 @@ def _is_stop_capture_command(value):
 
 
 def _capture_session_command(*args):
-    script = os.path.join(os.getcwd(), "capture_session.py")
-    return [sys.executable, script, *args]
+    return [sys.executable, "-m", "core.capture_session", *args]
 
 
 def _set_direct_answer(message):
@@ -407,15 +403,11 @@ def work():
             running = False
             return None
         else:
-            # 保存对话记录,发送至网页端,deepseek为流式回复,在其文件中
-            if use_openai:
-                logger.info(reply['content'])
-                config.set(answer=reply['content'])
-            else:
-                logger.info(reply)
-                config.set(answer=reply)
+            # 保存对话记录,发送至网页端
+            logger.info(reply)
+            config.set(answer=reply)
 
-        if use_openai and reply['content'].find('结束对话') != -1:
+        if isinstance(reply, str) and reply.find('结束对话') != -1:
             next = False
 
         if config.get("mqtt_message") is True:
@@ -434,10 +426,7 @@ def work():
         try:
             if os.path.exists('Sound/answer.wav'):
                 os.remove('Sound/answer.wav')
-            if use_openai:
-                tts.wav(reply['content'],'Sound/answer.wav')
-            else:
-                tts.wav(reply,'Sound/answer.wav')
+            tts.wav(str(reply), 'Sound/answer.wav')
             logger.info('tts complete!')
         except Exception as e:
             logger.warning(e)
@@ -546,7 +535,7 @@ def startchat():
             t3 = Thread(target=porcupine.start, args=(hwcallback,))
         t3.setDaemon(True)
         t3.start()
-    if gpio_wake_enable:
+    if globals().get("gpio_wake_enable", False):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(4,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
         GPIO.setup(18,GPIO.IN,pull_up_down=GPIO.PUD_DOWN)

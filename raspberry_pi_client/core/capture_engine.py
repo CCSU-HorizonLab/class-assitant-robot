@@ -21,9 +21,9 @@ try:
 except Exception:
     settings = None
 
-from pi_transcript_delivery import build_teacher_transcript
-from pi_teacher_questions import build_teacher_questions
-from video_standardizer import standardize_video
+from core.transcript_delivery import build_teacher_transcript
+from core.teacher_questions import build_teacher_questions
+from core.video_standardizer import standardize_video
 
 
 logger = logging.getLogger("pi_capture_runtime")

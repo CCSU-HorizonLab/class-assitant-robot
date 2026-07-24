@@ -9,21 +9,12 @@ logger.add(sys.stdout, colorize=True,  format="<green>{time:YYYY-MM-DD HH:mm:ss}
 logger.add('Log/PI-Assistant.log', colorize=False,  format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {file}:{line} - <level>{message}</level>", level="DEBUG")
 
 from flask import request,Flask,jsonify,render_template
-import arcade
 from threading import Thread
 from core import assistant as chat
 from config import config
-from const_config import music_enable,schedule_enable,udp_enable,hass_demo_enable
 from services import voice_solution
 from services.voice_solution import tts
-from hardware import player as play
-
-if music_enable:
-    from if_config import if_music
-if schedule_enable:
-    from if_config import schedule
-if udp_enable:
-    from if_config import udpserver
+from hardware.player import play
 
 import logging
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -119,8 +110,7 @@ def speakk():
             config.set(notify_enable=True)
             time.sleep(0.5)
             play('Sound/ding.wav')
-            notifysound = arcade.Sound('Sound/notify.wav')
-            notifyplayer=notifysound.play()
+            play('Sound/notify.wav')
 
     return 'ok'
 
@@ -183,8 +173,7 @@ def admin():
                     if config.get("chat_enable") is False and config.get("notify_enable") is False:
                         config.set(notify_enable = True)
                         play('Sound/ding.wav')
-                        notifysound = arcade.Sound('Sound/notify.wav')
-                        notifyplayer = notifysound.play()
+                        play('Sound/notify.wav')
                 except Exception as e:
                     logger.warning(e)
                     if config.get("chat_enable") is False and config.get("notify_enable") is False:
@@ -202,30 +191,6 @@ if __name__ == '__main__':
     logger.info('Chat service started successfully')
     t2=Thread(target=admin)
     t2.start()
-
-    if music_enable:
-        t3=Thread(target=if_music.watch)
-        t3.start()
-        logger.info('Music service started successfully')
-
-    if udp_enable:
-        t4=Thread(target=udpserver.udp_server)
-        t4.start()
-        logger.info('Udp service started successfully')
-
-    t5=Thread(target=if_time.admin)
-    t5.start()
-
-    if schedule_enable:
-        t6=Thread(target=schedule.timer)
-        t6.start()
-        logger.info('Schedule service started successfully')
-
-    if hass_demo_enable:
-        import hass_light_demo
-        t7=Thread(target=hass_light_demo.handle)
-        t7.start()
-        logger.info('hassApi service started successfully')
 
     try:
         from services import heartbeat_reporter as device_heartbeat

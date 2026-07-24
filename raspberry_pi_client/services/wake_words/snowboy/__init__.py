@@ -1,1 +1,1 @@
-from snowboy import *
+# Snowboy package initialization

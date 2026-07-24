@@ -5,7 +5,7 @@ import json
 from const_config import sfapikey
 import threading
 from loguru import logger
-from voice_solution import response_queue
+from services.voice_solution import response_queue
 
 
 # DeepSeek API 配置
@@ -20,7 +20,7 @@ def init_system():
     """
     初始化系统对话，添加系统提示。
     """
-    from prompt_and_deal import get_system_prompt
+    from services.prompt_deal import get_system_prompt
     global messages
     messages = []
     system_message = get_system_prompt()
@@ -37,7 +37,7 @@ def chat_request_stream():
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "deepseek-ai/DeepSeek-V4-Flash",
+        "model": "deepseek-ai/DeepSeek-V3",
         "messages": messages,
         "stream": True,  # 启用流式返回
         "max_tokens": 512,

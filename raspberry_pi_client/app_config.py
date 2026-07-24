@@ -30,7 +30,7 @@ class _Settings:
     keyframe_receiver_url = "http://127.0.0.1:8000/api/keyframes"
     keyframe_log_file = "Log/keyframe_capture.log"
 
-    pi_upload_url = "http://8.148.205.228/api/videos/upload"
+    pi_upload_url = "http://8.148.13.80:8011/api/videos/upload"
     pi_upload_watch_dir = "videos_to_upload"
     pi_upload_log_file = "upload_watcher.log"
     pi_ffmpeg_bin = os.environ.get("PI_FFMPEG_BIN", "ffmpeg")

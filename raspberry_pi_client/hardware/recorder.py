@@ -19,20 +19,14 @@ def record():
         logger.info('声音获取完成.')
     return audio
 def record_file():
-
-    rate=16000
+    rate = 16000
     r = sr.Recognizer()
+    r.energy_threshold = 200
+    r.dynamic_energy_threshold = True
     with sr.Microphone(sample_rate=rate) as source:
-
-        #r.adjust_for_ambient_noise(source)
-        #os.system('aplay ding.wav')
-        #time.sleep(1)
         logger.info('正在获取声音中...')
-        audio = r.listen(source,6,6)
+        audio = r.listen(source, timeout=8, phrase_time_limit=10)
 
-    # with sr.AudioFile
-        # print(r.recognize_google(audio, language='zh-CN'))
-        # a = audio.get_wav_data()
     with open("Sound/question.wav", "wb") as f:
         f.write(audio.get_wav_data())
         logger.info('声音获取完成.')

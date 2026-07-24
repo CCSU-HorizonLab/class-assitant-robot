@@ -105,7 +105,7 @@ def _read_state() -> dict:
 
 
 def cmd_start(args) -> int:
-    from pi_capture_runtime import CaptureSessionConfig, PiCaptureSession
+    from core.capture_engine import CaptureSessionConfig, PiCaptureSession
 
     existing_pid = _read_pid()
     if _is_pid_running(existing_pid):
