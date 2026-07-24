@@ -29,6 +29,7 @@ def _admin_nav(active: str, current_user: Optional[dict] = None) -> str:
         "teachers": "active" if active == "teachers" else "",
         "results": "active" if active == "results" else "",
         "ingestion": "active" if active == "ingestion" else "",
+        "devices": "active" if active == "devices" else "",
     }
     return f"""
     <nav class="nav" data-marker="admin-console-nav">
@@ -41,6 +42,7 @@ def _admin_nav(active: str, current_user: Optional[dict] = None) -> str:
         <a class="{active_class['classrooms']}" href="/admin/classrooms">班级管理</a>
         <a class="{active_class['teachers']}" href="/admin/teachers">教师管理</a>
         <a class="{active_class['results']}" href="/admin/results">课堂数据</a>
+        <a class="{active_class['devices']}" href="/admin/devices">设备监控</a>
         <a class="{active_class['ingestion']}" href="/admin/ingestion">接入状态</a>
         <a href="/teacher">教师端预览</a>
       </div>
@@ -686,3 +688,132 @@ def build_admin_trends_html(current_user: Optional[dict] = None) -> str:
     </script>
     """
     return _shell("平台趋势洞察", "trends", "phase30-admin-trends-page", body, current_user)
+
+
+def build_admin_devices_html(current_user: Optional[dict] = None) -> str:
+    body = """
+    <style>
+      .device-online { color: #10b981; }
+      .device-offline { color: #ef4444; }
+      .device-card { display: flex; gap: 12px; align-items: center; }
+      .device-status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+      .device-status-dot.online { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,.5); }
+      .device-status-dot.offline { background: #ef4444; }
+      .alert-banner { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+      .alert-banner h3 { color: #991b1b; margin: 0 0 8px; font-size: 15px; }
+      .alert-banner p { color: #7f1d1d; margin: 0; font-size: 13px; }
+      .device-table { width: 100%; border-collapse: collapse; }
+      .device-table th { text-align: left; padding: 12px 16px; font-size: 12px; color: #64748b; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; letter-spacing: .5px; }
+      .device-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+      .device-table tr:hover td { background: #f8fafc; }
+      .type-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+      .type-badge.real { background: #dbeafe; color: #1d4ed8; }
+      .type-badge.virtual { background: #f3e8ff; color: #7c3aed; }
+      @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .4; }
+      }
+    </style>
+    <section class="hero">
+      <p class="kicker">IoT 设备层</p>
+      <h1>设备状态监控</h1>
+      <p class="muted">实时监控所有树莓派采集终端的运行状态与心跳，支持横向扩展到多间教室。</p>
+    </section>
+    <p id="page-error" class="error"></p>
+    <section id="device-summary" class="grid" data-marker="admin-devices-summary"></section>
+    <section id="alert-section"></section>
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;">设备列表</h2>
+        <span class="muted" style="font-size:12px;" id="refresh-hint">每 5s 自动刷新</span>
+      </div>
+      <div id="device-list" data-marker="admin-device-list"></div>
+    </section>
+    <script>
+      function statusDot(status) {
+        const cls = status === 'online' ? 'online' : 'offline';
+        return `<span class="device-status-dot ${cls}"></span>${status === 'online' ? '在线' : '离线'}`;
+      }
+      function typeBadge(t) {
+        const label = t === 'real' ? '真实设备' : '仿真节点';
+        return `<span class="type-badge ${t || 'real'}">${label}</span>`;
+      }
+      function ago(iso) {
+        if (!iso) return '—';
+        const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+        if (diff < 5) return '刚刚';
+        if (diff < 60) return diff + ' 秒前';
+        if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+        return Math.floor(diff / 86400) + ' 天前';
+      }
+      function pct(v) { return v !== null && v !== undefined ? v.toFixed(0) + '%' : '—'; }
+      function temp(v) { return v !== null && v !== undefined ? v.toFixed(0) + '°C' : '—'; }
+
+      async function loadDevices() {
+        try {
+          const r = await fetch('/api/admin/devices');
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const data = await r.json();
+
+          // Summary cards
+          document.getElementById('device-summary').innerHTML = [
+            ['总设备数', data.total, ''],
+            ['在线设备', data.online, 'color:#10b981'],
+            ['离线设备', data.offline, 'color:#ef4444'],
+            ['运行率', data.uptime_rate + '%', data.uptime_rate >= 80 ? 'color:#10b981' : 'color:#f59e0b'],
+          ].map(([label, value, style]) =>
+            `<div class="metric"><span>${label}</span><strong style="${style}">${value}</strong></div>`
+          ).join('');
+
+          // Alert banner for offline devices
+          const offlineDevices = (data.devices || []).filter(d => d.device_status === 'offline');
+          if (offlineDevices.length > 0) {
+            document.getElementById('alert-section').innerHTML =
+              `<div class="alert-banner">
+                <h3>⚠️ 离线设备告警（${offlineDevices.length} 台）</h3>
+                ${offlineDevices.map(d =>
+                  `<p>${d.device_name} / ${d.classroom_name || '未分配'}：最后心跳 ${ago(d.last_heartbeat)}（${d.last_heartbeat ? new Date(d.last_heartbeat).toLocaleString('zh-CN') : '无记录'}）</p>`
+                ).join('')}
+              </div>`;
+          } else {
+            document.getElementById('alert-section').innerHTML = '';
+          }
+
+          // Device table
+          const devices = data.devices || [];
+          if (devices.length === 0) {
+            document.getElementById('device-list').innerHTML =
+              '<div class="empty">暂无注册设备。设备首次上报心跳后将自动注册。</div>';
+          } else {
+            document.getElementById('device-list').innerHTML =
+              `<table class="device-table">
+                <thead><tr>
+                  <th>设备</th><th>教室</th><th>类型</th><th>状态</th><th>CPU</th><th>内存</th><th>磁盘</th><th>温度</th><th>最后心跳</th>
+                </tr></thead>
+                <tbody>${devices.map(d => `
+                  <tr>
+                    <td><strong>${d.device_name}</strong><br><span class="muted" style="font-size:11px;">${d.device_mac || ''}</span></td>
+                    <td>${d.classroom_name || '—'}</td>
+                    <td>${typeBadge(d.device_type)}</td>
+                    <td>${statusDot(d.device_status)}</td>
+                    <td>${pct(d.cpu_percent)}</td>
+                    <td>${pct(d.mem_percent)}</td>
+                    <td>${pct(d.disk_percent)}</td>
+                    <td>${temp(d.temperature)}</td>
+                    <td><span class="muted" style="font-size:12px;">${ago(d.last_heartbeat)}</span></td>
+                  </tr>
+                `).join('')}</tbody>
+              </table>
+              <p class="muted" style="margin-top:12px;font-size:12px;">共 ${data.total} 台设备</p>`;
+          }
+        } catch (e) {
+          document.getElementById('page-error').textContent = `设备数据加载失败：${e}`;
+        }
+      }
+
+      loadDevices();
+      setInterval(loadDevices, 5000);
+    </script>
+    """
+    return _shell("设备监控", "devices", "admin-devices-page", body, current_user)

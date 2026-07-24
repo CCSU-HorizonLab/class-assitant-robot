@@ -18,6 +18,9 @@ from .routers import (
     teacher_router,
     admin_router,
     dashboard_router,
+    device_router,
+    start_heartbeat_checker,
+    stop_heartbeat_checker,
 )
 from .utils.logging_utils import setup_logging
 from .services import FileResultRepository, build_query_repository
@@ -33,7 +36,9 @@ async def lifespan(_: FastAPI):
     settings.ensure_directories()
     logger.info("Cloud query repository backend=%s", getattr(repository, "backend_name", "unknown"))
     logger.info("云端接收服务启动完成，数据目录：%s", settings.data_dir)
+    start_heartbeat_checker()
     yield
+    await stop_heartbeat_checker()
     logger.info("云端接收服务已关闭")
 
 
@@ -59,6 +64,7 @@ app.include_router(ingestion_router)
 app.include_router(teacher_router)
 app.include_router(admin_router)
 app.include_router(dashboard_router)
+app.include_router(device_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), name="static")

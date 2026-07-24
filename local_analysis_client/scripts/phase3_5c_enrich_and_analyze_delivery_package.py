@@ -10,8 +10,11 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+_CORE_DIR = REPO_ROOT / "local-processor" / "core"
+_API_DIR = REPO_ROOT / "local-processor" / "api"
+for _path in (REPO_ROOT, _CORE_DIR, _API_DIR):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 
 from classroom_feedback_pipeline import analyze_delivery_package
 
@@ -169,6 +172,9 @@ def _ensure_transcript_payload(
                 transcript_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
                 return payload, "imported", ""
 
+    if phase312 is None:
+        return {}, "generated_unavailable", "enrichment_script_missing"
+
     if not video_path.exists():
         return {}, "generated_unavailable", f"video_missing: {video_path}"
 
@@ -230,6 +236,9 @@ def _ensure_question_payload(
             if _question_payload_has_events(payload):
                 questions_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
                 return payload, "imported", ""
+
+    if phase313 is None:
+        return {}, "generated_unavailable", "enrichment_script_missing"
 
     segments = transcript_payload.get("segments") if isinstance(transcript_payload, dict) else None
     if not isinstance(segments, list) or not segments:
@@ -311,9 +320,11 @@ def _question_payload_from_csv(path: Path) -> dict[str, Any]:
 
 
 def _load_script_module(module_name: str, file_path: Path) -> Any:
+    if not file_path.exists():
+        return None
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot_load_module: {file_path}")
+        return None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

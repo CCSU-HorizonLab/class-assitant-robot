@@ -6,6 +6,7 @@ from .login_templates import build_forbidden_html, build_login_html, build_regis
 from .teacher_templates import build_teacher_home_html, build_teacher_reports_html, build_teacher_results_html
 from .admin_templates import (
     build_admin_classrooms_html,
+    build_admin_devices_html,
     build_admin_home_html,
     build_admin_ingestion_html,
     build_admin_results_html,
@@ -23,6 +24,7 @@ __all__ = [
     "build_teacher_reports_html",
     "build_teacher_results_html",
     "build_admin_classrooms_html",
+    "build_admin_devices_html",
     "build_admin_home_html",
     "build_admin_ingestion_html",
     "build_admin_results_html",

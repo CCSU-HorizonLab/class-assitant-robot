@@ -2,6 +2,7 @@
 # Current runtime still reads the repository-root `config.yaml`.
 
 paths:
+  base_dir: ".."
   received_keyframes_dir: "received_keyframes"
   processed_results_dir: "processed_results"
 

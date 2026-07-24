@@ -9,6 +9,7 @@ from .auth import AUTH_COOKIE_NAME, require_page_user
 from ..views import (
     build_admin_home_html,
     build_admin_classrooms_html,
+    build_admin_devices_html,
     build_admin_teachers_html,
     build_admin_results_html,
     build_admin_ingestion_html,
@@ -74,6 +75,16 @@ async def admin_ingestion_page(auth_token: Optional[str] = Cookie(default=None, 
     except HTTPException as exc:
         return _login_redirect() if exc.status_code == 401 else _forbidden_response()
     return HTMLResponse(content=build_admin_ingestion_html(user))
+
+
+@router.get("/admin/devices", response_class=HTMLResponse, tags=["Admin Pages"])
+async def admin_devices_page(auth_token: Optional[str] = Cookie(default=None, alias=AUTH_COOKIE_NAME)) -> HTMLResponse:
+    """Render the IoT device status monitoring page."""
+    try:
+        user = require_page_user(auth_token, required_role="admin")
+    except HTTPException as exc:
+        return _login_redirect() if exc.status_code == 401 else _forbidden_response()
+    return HTMLResponse(content=build_admin_devices_html(user))
 
 
 @router.get("/admin/trends", response_class=HTMLResponse, tags=["Admin Pages"])

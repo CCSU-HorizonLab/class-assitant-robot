@@ -1,7 +1,7 @@
 # 本地分析端配置
 paths:
-  received_keyframes_dir: "received_keyframes"
-  processed_results_dir: "processed_results"
+  received_keyframes_dir: "local_analysis_client/received_keyframes"
+  processed_results_dir: "local_analysis_client/processed_results"
 
 models:
   use_merged_model: true

@@ -10,13 +10,16 @@ import numpy as np
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+_CORE_DIR = REPO_ROOT / "local-processor" / "core"
+_API_DIR = REPO_ROOT / "local-processor" / "api"
+for _path in (_CORE_DIR, _API_DIR):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 
 from classroom_feedback_pipeline import analyze_delivery_package
 
 
-SAMPLE_PACKAGE_DIR = REPO_ROOT / "captures_local_delivery" / "classroom_101" / "2026-04-17" / "session_001"
+SAMPLE_PACKAGE_DIR = REPO_ROOT / "processed_results" / "validation" / "sample_package"
 
 
 def main() -> None:

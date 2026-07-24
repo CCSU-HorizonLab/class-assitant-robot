@@ -13,6 +13,11 @@ from .interaction import (
     InteractionResultPayload,
     ApiResponse,
 )
+from .device import (
+    HeartbeatRequest,
+    DeviceResponse,
+    DeviceListResponse,
+)
 
 __all__ = [
     "LoginRequest",
@@ -23,4 +28,7 @@ __all__ = [
     "AISummaryRequest",
     "InteractionResultPayload",
     "ApiResponse",
+    "HeartbeatRequest",
+    "DeviceResponse",
+    "DeviceListResponse",
 ]

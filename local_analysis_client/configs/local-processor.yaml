@@ -1,12 +1,13 @@
 # Local processor template configuration.
 
 paths:
+  base_dir: ".."
   received_keyframes_dir: "received_keyframes"
   processed_results_dir: "processed_results"
 
 models:
   use_merged_model: true
-  merged_model_path: "runs/detect/train_interaction_v1/weights/best.pt"
+  merged_model_path: "yolov8n.pt"
 
 inference:
   imgsz: 640

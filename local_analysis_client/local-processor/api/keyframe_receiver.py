@@ -10,6 +10,12 @@ import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
+import sys
+from pathlib import Path
+_CORE_DIR = Path(__file__).resolve().parent.parent / "core"
+if str(_CORE_DIR) not in sys.path:
+    sys.path.insert(0, str(_CORE_DIR))
+
 from yolo_interaction_processor import build_default_processor, configure_logging, load_raw_config, resolve_config_path
 
 
