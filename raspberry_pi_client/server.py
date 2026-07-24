@@ -228,6 +228,14 @@ if __name__ == '__main__':
         t7.start()
         logger.info('hassApi service started successfully')
 
+    try:
+        import device_heartbeat
+        t_hb = Thread(target=device_heartbeat.start_heartbeat_loop, daemon=True)
+        t_hb.start()
+        logger.info('Device heartbeat service started successfully')
+    except Exception as e:
+        logger.warning(f'Could not start device heartbeat service: {e}')
+
     logger.info('Startup completed , PI-Assistant is running')
 
     app.run(host='0.0.0.0')

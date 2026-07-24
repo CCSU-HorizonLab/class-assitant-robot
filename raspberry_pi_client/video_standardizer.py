@@ -348,4 +348,11 @@ def standardize_video(
         result.transcode_status = "failed"
         result.transcode_error = result.transcode_error or "standardized_video_not_browser_compatible"
 
+    # Auto-cleanup raw video.mp4 if standardized_video.mp4 is valid and browser compatible
+    if result.browser_compatible and input_path.exists() and input_path != output_path:
+        try:
+            input_path.unlink()
+        except OSError:
+            pass
+
     return result
