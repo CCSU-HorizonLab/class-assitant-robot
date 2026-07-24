@@ -1,33 +1,25 @@
 import sys
+import os
+
+# Add parent directory to sys.path so services and hardware modules can be imported
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from const_config import snowboy_enable,gpio_wake_enable,use_online_recognize,\
     music_enable,schedule_enable,use_openai,dev_enable,wlan_enable,\
     chat_or_standard,porcupine_enable
 
 if snowboy_enable:
-    from const_config import snowboypath
+    snowboypath = os.path.join(os.path.dirname(__file__), "..", "services", "wake_words", "snowboy")
     sys.path.append(snowboypath)
-    from snowboy import hotwordBymic
-elif porcupine_enable:
-    from const_config import porcupinepath
-    sys.path.append(porcupinepath)
-    from Porcupine import porcupine
-
-if gpio_wake_enable:
-    import RPi.GPIO as GPIO
+    from services.wake_words.snowboy import hotwordBymic
 
 if use_online_recognize:
-    from voice_solution import reco
-else:
-    from voskReco import vosk_reco
+    from services.voice_solution import reco
 
-if music_enable:
-    from if_config import if_music
-
-if schedule_enable:
-    from if_config import schedule
-
-if dev_enable:
-    import dev_control
+from services.voice_solution import tts, tts_stream
+from services import prompt_deal as prompt_and_deal
+from hardware import recorder as speechpoint
+from hardware import player as play
     from if_config import if_devControl
 
 if wlan_enable:

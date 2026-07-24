@@ -11,13 +11,12 @@ logger.add('Log/PI-Assistant.log', colorize=False,  format="<green>{time:YYYY-MM
 from flask import request,Flask,jsonify,render_template
 import arcade
 from threading import Thread
-import chat
+from core import assistant as chat
 from config import config
 from const_config import music_enable,schedule_enable,udp_enable,hass_demo_enable
-from if_config import if_time
-from voice_solution import tts
-from play import play
-import Scene
+from services import voice_solution
+from services.voice_solution import tts
+from hardware import player as play
 
 if music_enable:
     from if_config import if_music
@@ -229,7 +228,7 @@ if __name__ == '__main__':
         logger.info('hassApi service started successfully')
 
     try:
-        import device_heartbeat
+        from services import heartbeat_reporter as device_heartbeat
         t_hb = Thread(target=device_heartbeat.start_heartbeat_loop, daemon=True)
         t_hb.start()
         logger.info('Device heartbeat service started successfully')
