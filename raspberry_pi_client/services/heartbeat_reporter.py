@@ -24,7 +24,7 @@ CLOUD_HOST = os.environ.get("CLOUD_HOST", "8.148.13.80")
 CLOUD_PORT = int(os.environ.get("CLOUD_PORT", "8011"))
 MQTT_BROKER_HOST = os.environ.get("MQTT_BROKER_HOST", CLOUD_HOST)
 MQTT_BROKER_PORT = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
-HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "60"))
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "30"))
 
 HTTP_HEARTBEAT_URL = f"http://{CLOUD_HOST}:{CLOUD_PORT}/api/device/heartbeat"
 MQTT_TOPIC = "classroom/device/heartbeat"

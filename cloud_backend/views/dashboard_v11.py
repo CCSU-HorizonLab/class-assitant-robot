@@ -198,7 +198,7 @@ def build_results_center_html(
           </template>
           <template v-else>
             <div class="large-score" v-text="formatScore(summary.feedback_score)"></div>
-            <p class="muted">综合反馈分</p>
+            <p class="muted">综合评分</p>
           </template>
           <div class="feedback-box" data-marker="teaching-feedback-summary">
             <p v-text="summary.summary_text || '暂无教学反馈摘要。'"></p>
@@ -703,8 +703,9 @@ def build_results_center_html(
           }};
         }},
         formatScore(value) {{
-          const number = Number(value || 0);
-          return Number.isFinite(number) ? number.toFixed(1) : "0.0";
+          if (value === null || value === undefined) return "—";
+          const number = Number(value);
+          return Number.isFinite(number) ? number.toFixed(1) : "—";
         }},
         formatConfidence(value) {{
           const number = Number(value);
@@ -1492,7 +1493,7 @@ def _hero_metric_rows(latest: dict[str, Any]) -> str:
                 ("班级", latest.get("classroom_id")),
                 ("来源主机", latest.get("source_host")),
                 ("生成时间", latest.get("generated_at")),
-                ("反馈分", _score(latest.get("feedback_score"))),
+                ("综合评分", _score(latest.get("feedback_score"))),
                 ("专注度", _score(latest.get("attention_score"))),
                 ("响应度", _score(latest.get("response_score"))),
             ],
@@ -1545,13 +1546,14 @@ def _summary(payload: dict[str, Any]) -> dict[str, Any]:
         )
     display_flags = {
         "asr_trusted_metrics_only": asr_trusted_metrics_only,
-        "hide_attention_metrics": asr_trusted_metrics_only and bool(attention_curve) and all(float(value or 0) == 0 for value in attention_curve),
-        "hide_avg_attention": asr_trusted_metrics_only,
+        "attention_unavailable": attention_score is None and avg_attention_ratio is None,
+        "hide_attention_metrics": (asr_trusted_metrics_only and bool(attention_curve) and all(float(value or 0) == 0 for value in attention_curve)) or (attention_score is None),
+        "hide_avg_attention": asr_trusted_metrics_only or avg_attention_ratio is None,
         "hide_student_count": asr_trusted_metrics_only and float(students.get("estimated_student_count") or 0) == 0,
         "hide_stage_distribution": asr_trusted_metrics_only and bool(stage_distribution) and all(float(value or 0) == 0 for value in stage_distribution.values()),
-        "hide_phase32_score_breakdown": asr_trusted_metrics_only,
-        "hide_region_attention": asr_trusted_metrics_only,
-        "hide_attention_curve": asr_trusted_metrics_only and bool(attention_curve) and all(float(value or 0) == 0 for value in attention_curve),
+        "hide_phase32_score_breakdown": asr_trusted_metrics_only or attention_score is None,
+        "hide_region_attention": asr_trusted_metrics_only or attention_score is None,
+        "hide_attention_curve": (asr_trusted_metrics_only and bool(attention_curve) and all(float(value or 0) == 0 for value in attention_curve)) or attention_curve is None,
     }
     return {
         "analysis_id": payload.get("analysis_id"),

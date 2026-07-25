@@ -208,13 +208,22 @@ def analyze_delivery_package(
     )
     teacher_question_count = len(response_events)
     response_success_rate = _compute_response_success_rate(response_events)
-    attention_score = round(avg_attention_ratio * 100, 2)
+    attention_score = round(avg_attention_ratio * 100, 2) if avg_attention_ratio is not None else None
     response_score = _compute_response_score(response_events)
     avg_activity = (sum(activity_curve) / len(activity_curve)) if activity_curve else 0.0
-    feedback_score = round(
-        min(max((0.45 * attention_score) + (0.4 * response_score) + (0.15 * avg_activity * 100), 0.0), 100.0),
-        2,
-    )
+    # Dynamic weighting: when attention is unavailable, redistribute its weight to response + activity
+    if attention_score is not None:
+        feedback_score = round(
+            min(max((0.45 * attention_score) + (0.4 * response_score) + (0.15 * avg_activity * 100), 0.0), 100.0),
+            2,
+        )
+    elif response_score > 0:
+        feedback_score = round(
+            min(max((0.55 * response_score) + (0.45 * avg_activity * 100), 0.0), 100.0),
+            2,
+        )
+    else:
+        feedback_score = None  # insufficient data for meaningful feedback score
     output_path = output_dir / f"{analysis_id}.json"
     video_capability = _audit_local_video_capability()
     capture_block = _extract_capture_block(capture_metadata)
@@ -281,7 +290,7 @@ def analyze_delivery_package(
             "attention_score": attention_score,
             "response_score": response_score,
             "teacher_question_count": teacher_question_count,
-            "avg_attention_ratio": round(avg_attention_ratio, 4),
+            "avg_attention_ratio": round(avg_attention_ratio, 4) if avg_attention_ratio is not None else None,
             "response_success_rate": round(response_success_rate, 4),
             "summary_text": _build_summary_text(
                 teacher_question_count=teacher_question_count,
@@ -2038,7 +2047,7 @@ def _resolve_estimated_student_count(metadata: dict[str, Any], student_window_re
     return 0
 
 
-def _resolve_avg_attention_ratio(metadata: dict[str, Any], zone_summary: dict[str, dict[str, float]]) -> float:
+def _resolve_avg_attention_ratio(metadata: dict[str, Any], zone_summary: dict[str, dict[str, float]]) -> float | None:
     students_cfg = metadata.get("students", {})
     if isinstance(students_cfg, dict) and students_cfg.get("avg_attention_ratio") is not None:
         val = float(students_cfg["avg_attention_ratio"])
@@ -2047,39 +2056,26 @@ def _resolve_avg_attention_ratio(metadata: dict[str, Any], zone_summary: dict[st
     zone_values = [zone["avg_attention_ratio"] for zone in zone_summary.values() if isinstance(zone, dict) and zone.get("avg_attention_ratio", 0) > 0]
     if zone_values:
         return sum(zone_values) / len(zone_values)
-    active_values = [zone["active_ratio"] for zone in zone_summary.values() if isinstance(zone, dict) and zone.get("active_ratio", 0) > 0]
-    if active_values:
-        analysis_id = str(metadata.get("analysis_id") or "")
-        import hashlib
-        h_val = int(hashlib.md5(analysis_id.encode("utf-8")).hexdigest()[:6], 16) % 100
-        val = 0.76 + (h_val / 1000.0) # dynamic attention ratio between 0.76 and 0.86
-        return round(val, 4)
-    return 0.0
+    # No real attention data available — return None instead of generating fake data
+    return None
 
 
 def _build_attention_curve(
     metadata: dict[str, Any],
     student_window_results: list[dict[str, Any]],
-    avg_attention_ratio: float,
-) -> list[float]:
+    avg_attention_ratio: float | None,
+) -> list[float] | None:
     timeline_cfg = metadata.get("timeline", {})
     if isinstance(timeline_cfg, dict) and timeline_cfg.get("attention_curve"):
         return [round(float(value), 4) for value in timeline_cfg["attention_curve"]]
     students_cfg = metadata.get("students", {})
     if isinstance(students_cfg, dict) and students_cfg.get("attention_windows"):
         return [round(float(value), 4) for value in students_cfg["attention_windows"]]
+    # When no real attention data, return None instead of generating fake sine-wave data
+    if avg_attention_ratio is None:
+        return None
     window_count = max(1, len(student_window_results))
-    analysis_id = str(metadata.get("analysis_id") or "")
-    import hashlib
-    import math
-    seed = int(hashlib.md5(analysis_id.encode("utf-8")).hexdigest()[:6], 16)
-    
-    values = []
-    for index in range(window_count):
-        wave = 0.08 * math.sin((index + (seed % 10)) * 0.4)
-        val = avg_attention_ratio + wave
-        values.append(round(min(max(float(val), 0.10), 0.98), 4))
-    return values
+    return [round(float(avg_attention_ratio), 4)] * window_count
 
 
 def _build_activity_curve(metadata: dict[str, Any], student_window_results: list[dict[str, Any]]) -> list[float]:
@@ -2316,7 +2312,7 @@ def _normalize_curve(curve: list[float], *, target_length: int) -> list[float]:
 def _build_summary_text(
     *,
     teacher_question_count: int,
-    avg_attention_ratio: float,
+    avg_attention_ratio: float | None,
     response_success_rate: float,
     activity_curve: list[float],
 ) -> str:
@@ -2325,7 +2321,7 @@ def _build_summary_text(
         return "当前素材中未识别到明确提问事件，建议结合更完整转写继续复核。"
     if response_success_rate <= 0.0:
         return "检测到教师提问，但当前素材中未观察到明显学生响应。"
-    if avg_attention_ratio < 0.4:
+    if avg_attention_ratio is not None and avg_attention_ratio < 0.4:
         return "课堂中段注意力信号偏弱，但提问后仍出现一定响应。"
     if peak_activity > 0.4:
         return "提问后课堂活跃度有明显提升，适合结合时间线继续查看。"
